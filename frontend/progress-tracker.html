@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PrepMate AI - Progress Tracker</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 40px 20px; }
+        .container { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); max-width: 700px; margin: 0 auto; }
+        .logo { text-align: center; margin-bottom: 30px; }
+        .logo h1 { color: #667eea; font-size: 28px; }
+        .logo p { color: #888; font-size: 14px; }
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 15px; text-align: center; color: white; }
+        .stat-card h2 { font-size: 36px; margin-bottom: 5px; }
+        .stat-card p { font-size: 13px; opacity: 0.9; }
+        .section { margin-bottom: 30px; }
+        .section h3 { color: #333; margin-bottom: 15px; font-size: 18px; }
+        .progress-item { display: flex; align-items: center; margin-bottom: 15px; }
+        .progress-label { width: 150px; color: #555; font-size: 14px; }
+        .progress-bar-bg { flex: 1; background: #eee; border-radius: 10px; height: 12px; margin: 0 15px; }
+        .progress-bar { height: 12px; border-radius: 10px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); transition: width 1s ease; }
+        .progress-percent { width: 40px; color: #667eea; font-weight: 600; font-size: 14px; }
+        .activity-list { list-style: none; }
+        .activity-list li { padding: 12px 15px; background: #f8f9ff; border-radius: 10px; margin-bottom: 10px; color: #333; font-size: 14px; display: flex; align-items: center; gap: 10px; }
+        .activity-list li span { font-size: 20px; }
+        .back-btn { text-align: center; margin-top: 20px; }
+        .back-btn a { color: #667eea; text-decoration: none; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <h1>🎯 PrepMate AI</h1>
+            <p>Progress Tracker</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h2 id="resumeCount">0</h2>
+                <p>Resumes Analyzed</p>
+            </div>
+            <div class="stat-card">
+                <h2 id="interviewCount">0</h2>
+                <p>Mock Interviews</p>
+            </div>
+            <div class="stat-card">
+                <h2 id="dsaCount">0</h2>
+                <p>DSA Problems</p>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>📊 Feature Usage</h3>
+            <div class="progress-item">
+                <div class="progress-label">Resume Analyzer</div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar" id="resumeBar" style="width: 0%"></div>
+                </div>
+                <div class="progress-percent" id="resumePct">0%</div>
+            </div>
+            <div class="progress-item">
+                <div class="progress-label">Mock Interview</div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar" id="interviewBar" style="width: 0%"></div>
+                </div>
+                <div class="progress-percent" id="interviewPct">0%</div>
+            </div>
+            <div class="progress-item">
+                <div class="progress-label">DSA Practice</div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar" id="dsaBar" style="width: 0%"></div>
+                </div>
+                <div class="progress-percent" id="dsaPct">0%</div>
+            </div>
+            <div class="progress-item">
+                <div class="progress-label">Company Qs</div>
+                <div class="progress-bar-bg">
+                    <div class="progress-bar" id="companyBar" style="width: 0%"></div>
+                </div>
+                <div class="progress-percent" id="companyPct">0%</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>🕐 Recent Activity</h3>
+            <ul class="activity-list" id="activityList">
+                <li><span>📄</span> No activity yet — start practicing!</li>
+            </ul>
+        </div>
+
+        <div class="back-btn">
+            <a href="dashboard.html">← Back to Dashboard</a>
+        </div>
+    </div>
+
+    <script>
+        // LocalStorage lo progress load cheyyi
+        function loadProgress() {
+            const resume = parseInt(localStorage.getItem('resumeCount') || 0);
+            const interview = parseInt(localStorage.getItem('interviewCount') || 0);
+            const dsa = parseInt(localStorage.getItem('dsaCount') || 0);
+            const company = parseInt(localStorage.getItem('companyCount') || 0);
+
+            document.getElementById('resumeCount').textContent = resume;
+            document.getElementById('interviewCount').textContent = interview;
+            document.getElementById('dsaCount').textContent = dsa;
+
+            const total = resume + interview + dsa + company || 1;
+            setBar('resumeBar', 'resumePct', resume, total);
+            setBar('interviewBar', 'interviewPct', interview, total);
+            setBar('dsaBar', 'dsaPct', dsa, total);
+            setBar('companyBar', 'companyPct', company, total);
+
+            // Activity
+            const activities = JSON.parse(localStorage.getItem('activities') || '[]');
+            if (activities.length > 0) {
+                document.getElementById('activityList').innerHTML = activities.slice(-5).reverse().map(a =>
+                    `<li><span>${a.icon}</span> ${a.text}</li>`
+                ).join('');
+            }
+        }
+
+        function setBar(barId, pctId, count, total) {
+            const pct = Math.round((count / total) * 100);
+            document.getElementById(barId).style.width = pct + '%';
+            document.getElementById(pctId).textContent = pct + '%';
+        }
+
+        loadProgress();
+    </script>
+</body>
+</html>

@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PrepMate AI - Company Questions</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .container { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); width: 600px; }
+        .logo { text-align: center; margin-bottom: 30px; }
+        .logo h1 { color: #667eea; font-size: 28px; }
+        .logo p { color: #888; font-size: 14px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; color: #333; font-weight: 600; }
+        .form-group input { width: 100%; padding: 12px 15px; border: 2px solid #eee; border-radius: 10px; font-size: 15px; }
+        .form-group input:focus { outline: none; border-color: #667eea; }
+        .form-group select { width: 100%; padding: 12px 15px; border: 2px solid #eee; border-radius: 10px; font-size: 15px; }
+        .btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; }
+        .result { margin-top: 20px; padding: 20px; background: #f8f9ff; border-radius: 10px; display: none; }
+        .result h3 { color: #667eea; margin-bottom: 10px; }
+        .result pre { white-space: pre-wrap; color: #333; font-family: 'Segoe UI', sans-serif; line-height: 1.6; }
+        .loading { text-align: center; color: #667eea; margin-top: 15px; display: none; }
+        .error { background: #fee; color: #e44; padding: 10px; border-radius: 8px; margin-bottom: 15px; text-align: center; display: none; }
+        .back-btn { text-align: center; margin-top: 20px; }
+        .back-btn a { color: #667eea; text-decoration: none; font-weight: 600; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <h1>🎯 PrepMate AI</h1>
+            <p>Company Interview Questions</p>
+        </div>
+        <div class="error" id="error"></div>
+        <div class="form-group">
+            <label>Company Name</label>
+            <input type="text" id="companyName" placeholder="Ex: Google, Amazon, TCS...">
+        </div>
+        <div class="form-group">
+            <label>Role</label>
+            <input type="text" id="role" placeholder="Ex: Software Engineer, Data Analyst...">
+        </div>
+        <div class="form-group">
+            <label>Difficulty</label>
+            <select id="difficulty">
+                <option value="easy">Easy</option>
+                <option value="medium" selected>Medium</option>
+                <option value="hard">Hard</option>
+            </select>
+        </div>
+        <button class="btn" id="getQuestionsBtn">🔍 Get Questions</button>
+        <div class="loading" id="loading">⏳ Generating questions... Please wait!</div>
+        <div class="result" id="result">
+            <h3>📋 Interview Questions</h3>
+            <pre id="resultText"></pre>
+        </div>
+        <div class="back-btn">
+            <a href="dashboard.html">← Back to Dashboard</a>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('getQuestionsBtn').addEventListener('click', async function() {
+            const company = document.getElementById('companyName').value;
+            const role = document.getElementById('role').value;
+            const difficulty = document.getElementById('difficulty').value;
+
+            if (!company || !role) {
+                showError('Please fill company name and role!');
+                return;
+            }
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/company-questions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ company, role, difficulty })
+                });
+
+                const data = await response.json();
+                document.getElementById('loading').style.display = 'none';
+
+                if (response.ok) {
+                    document.getElementById('resultText').textContent = data.result;
+                    document.getElementById('result').style.display = 'block';
+                } else {
+                    showError(data.error);
+                }
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                showError('Server not running!');
+            }
+        });
+
+        function showError(msg) {
+            document.getElementById('error').textContent = msg;
+            document.getElementById('error').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

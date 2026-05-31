@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PrepMate AI - DSA Practice</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .container { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); width: 700px; }
+        .logo { text-align: center; margin-bottom: 30px; }
+        .logo h1 { color: #667eea; font-size: 28px; }
+        .logo p { color: #888; font-size: 14px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; color: #333; font-weight: 600; }
+        .form-group select { width: 100%; padding: 12px 15px; border: 2px solid #eee; border-radius: 10px; font-size: 15px; }
+        .btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; margin-bottom: 10px; }
+        .problem-box { background: #f8f9ff; padding: 20px; border-radius: 10px; margin-bottom: 20px; display: none; }
+        .problem-box h3 { color: #667eea; margin-bottom: 10px; }
+        .problem-box p { color: #333; line-height: 1.6; }
+        .code-area { width: 100%; padding: 15px; border: 2px solid #eee; border-radius: 10px; font-size: 14px; font-family: 'Courier New', monospace; height: 200px; resize: vertical; }
+        .code-area:focus { outline: none; border-color: #667eea; }
+        .result { background: #f0fff4; padding: 20px; border-radius: 10px; margin-top: 20px; display: none; }
+        .result h3 { color: #4a4; margin-bottom: 10px; }
+        .result pre { white-space: pre-wrap; color: #333; font-family: 'Segoe UI', sans-serif; line-height: 1.6; }
+        .loading { text-align: center; color: #667eea; margin-top: 15px; display: none; }
+        .error { background: #fee; color: #e44; padding: 10px; border-radius: 8px; margin-bottom: 15px; text-align: center; display: none; }
+        .back-btn { text-align: center; margin-top: 20px; }
+        .back-btn a { color: #667eea; text-decoration: none; font-weight: 600; }
+        .tags { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+        .tag { background: #667eea22; color: #667eea; padding: 4px 12px; border-radius: 20px; font-size: 13px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <h1>🎯 PrepMate AI</h1>
+            <p>DSA Practice</p>
+        </div>
+        <div class="error" id="error"></div>
+        <div class="form-group">
+            <label>Topic</label>
+            <select id="topic">
+                <option value="Arrays">Arrays</option>
+                <option value="Strings">Strings</option>
+                <option value="Linked List">Linked List</option>
+                <option value="Trees">Trees</option>
+                <option value="Graphs">Graphs</option>
+                <option value="Dynamic Programming">Dynamic Programming</option>
+                <option value="Sorting">Sorting</option>
+                <option value="Searching">Searching</option>
+                <option value="Stack and Queue">Stack and Queue</option>
+                <option value="Recursion">Recursion</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Difficulty</label>
+            <select id="difficulty">
+                <option value="Easy">Easy</option>
+                <option value="Medium" selected>Medium</option>
+                <option value="Hard">Hard</option>
+            </select>
+        </div>
+        <button class="btn" id="getProblemBtn">🎲 Get Problem</button>
+        <div class="problem-box" id="problemBox">
+            <h3>📝 Problem</h3>
+            <p id="problemText"></p>
+            <div class="tags" id="tags"></div>
+        </div>
+        <div id="codeSection" style="display:none;">
+            <div class="form-group">
+                <label>Your Solution</label>
+                <textarea class="code-area" id="code" placeholder="Write your code here..."></textarea>
+            </div>
+            <button class="btn" id="submitBtn">✅ Submit Solution</button>
+            <div class="loading" id="loading">⏳ Checking solution... Please wait!</div>
+            <div class="result" id="result">
+                <h3>📊 AI Feedback</h3>
+                <pre id="resultText"></pre>
+            </div>
+        </div>
+        <div class="back-btn">
+            <a href="dashboard.html">← Back to Dashboard</a>
+        </div>
+    </div>
+    <script>
+        document.getElementById('getProblemBtn').addEventListener('click', async function() {
+            const topic = document.getElementById('topic').value;
+            const difficulty = document.getElementById('difficulty').value;
+            document.getElementById('problemBox').style.display = 'none';
+            document.getElementById('codeSection').style.display = 'none';
+            try {
+                const response = await fetch('http://127.0.0.1:5000/dsa-problem', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ topic, difficulty })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    document.getElementById('problemText').textContent = data.problem;
+                    document.getElementById('tags').innerHTML = `<span class="tag">${topic}</span><span class="tag">${difficulty}</span>`;
+                    document.getElementById('problemBox').style.display = 'block';
+                    document.getElementById('codeSection').style.display = 'block';
+                } else {
+                    showError(data.error);
+                }
+            } catch(e) {
+                showError('Server not running!');
+            }
+        });
+
+        document.getElementById('submitBtn').addEventListener('click', async function() {
+            const code = document.getElementById('code').value;
+            const problem = document.getElementById('problemText').textContent;
+            if (!code) { showError('Please write your solution!'); return; }
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').style.display = 'none';
+            try {
+                const response = await fetch('http://127.0.0.1:5000/dsa-feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ problem, code })
+                });
+                const data = await response.json();
+                document.getElementById('loading').style.display = 'none';
+                if (response.ok) {
+                    document.getElementById('resultText').textContent = data.feedback;
+                    document.getElementById('result').style.display = 'block';
+                } else {
+                    showError(data.error);
+                }
+            } catch(e) {
+                document.getElementById('loading').style.display = 'none';
+                showError('Server not running!');
+            }
+        });
+
+        function showError(msg) {
+            document.getElementById('error').textContent = msg;
+            document.getElementById('error').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PrepMate AI - Resume Analyzer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .container { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); width: 500px; }
+        .logo { text-align: center; margin-bottom: 30px; }
+        .logo h1 { color: #667eea; font-size: 28px; }
+        .logo p { color: #888; font-size: 14px; }
+        .upload-area { border: 2px dashed #667eea; border-radius: 10px; padding: 30px; text-align: center; margin-bottom: 20px; cursor: pointer; }
+        .upload-area p { color: #888; margin-top: 10px; }
+        .btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; }
+        .result { margin-top: 20px; padding: 20px; background: #f8f9ff; border-radius: 10px; display: none; }
+        .result h3 { color: #667eea; margin-bottom: 10px; }
+        .result pre { white-space: pre-wrap; color: #333; font-family: 'Segoe UI', sans-serif; }
+        .loading { text-align: center; color: #667eea; margin-top: 15px; display: none; }
+        .error { background: #fee; color: #e44; padding: 10px; border-radius: 8px; margin-bottom: 15px; text-align: center; display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <h1>🎯 PrepMate AI</h1>
+            <p>Resume Analyzer</p>
+        </div>
+        <div class="error" id="error"></div>
+        <div class="upload-area" onclick="document.getElementById('resumeFile').click()">
+            <h3>📄 Upload Your Resume</h3>
+            <p>Click here to select PDF file</p>
+            <input type="file" id="resumeFile" accept=".pdf" style="display:none">
+            <p id="fileName" style="color:#667eea; margin-top:10px; font-weight:600;"></p>
+        </div>
+        <button class="btn" id="analyzeBtn">🔍 Analyze Resume</button>
+        <div class="loading" id="loading">⏳ Analyzing your resume... Please wait!</div>
+        <div class="result" id="result">
+            <h3>📊 Analysis Result</h3>
+            <pre id="resultText"></pre>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('resumeFile').addEventListener('change', function() {
+            document.getElementById('fileName').textContent = this.files[0].name;
+        });
+
+        document.getElementById('analyzeBtn').addEventListener('click', async function() {
+            const file = document.getElementById('resumeFile').files[0];
+
+            if (!file) {
+                showError('Please upload a PDF file!');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('resume', file);
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('error').style.display = 'none';
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/analyze-resume', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+                document.getElementById('loading').style.display = 'none';
+
+                if (response.ok) {
+                    document.getElementById('resultText').textContent = data.result;
+                    document.getElementById('result').style.display = 'block';
+                } else {
+                    showError(data.error);
+                }
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                showError('Server not running!');
+            }
+        });
+
+        function showError(msg) {
+            document.getElementById('error').textContent = msg;
+            document.getElementById('error').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

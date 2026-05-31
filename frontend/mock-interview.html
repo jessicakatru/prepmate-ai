@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PrepMate AI - Mock Interview</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .container { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); width: 600px; }
+        .logo { text-align: center; margin-bottom: 30px; }
+        .logo h1 { color: #667eea; font-size: 28px; }
+        .logo p { color: #888; font-size: 14px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; color: #333; font-weight: 600; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 12px 15px; border: 2px solid #eee; border-radius: 10px; font-size: 15px; }
+        .form-group textarea { height: 120px; resize: none; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: #667eea; }
+        .btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; margin-bottom: 10px; }
+        .question-box { background: #f8f9ff; padding: 20px; border-radius: 10px; margin-bottom: 20px; display: none; }
+        .question-box h3 { color: #667eea; margin-bottom: 10px; }
+        .question-box p { color: #333; font-size: 16px; line-height: 1.6; }
+        .feedback-box { background: #f0fff4; padding: 20px; border-radius: 10px; margin-top: 20px; display: none; }
+        .feedback-box h3 { color: #4a4; margin-bottom: 10px; }
+        .feedback-box pre { white-space: pre-wrap; color: #333; font-family: 'Segoe UI', sans-serif; line-height: 1.6; }
+        .loading { text-align: center; color: #667eea; margin-top: 15px; display: none; }
+        .error { background: #fee; color: #e44; padding: 10px; border-radius: 8px; margin-bottom: 15px; text-align: center; display: none; }
+        .back-btn { text-align: center; margin-top: 20px; }
+        .back-btn a { color: #667eea; text-decoration: none; font-weight: 600; }
+        .step { display: none; }
+        .step.active { display: block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <h1>🎯 PrepMate AI</h1>
+            <p>Mock Interview</p>
+        </div>
+        <div class="error" id="error"></div>
+
+        <!-- Step 1: Setup -->
+        <div class="step active" id="step1">
+            <div class="form-group">
+                <label>Job Role</label>
+                <input type="text" id="jobRole" placeholder="Ex: Software Engineer, Data Analyst...">
+            </div>
+            <div class="form-group">
+                <label>Experience Level</label>
+                <select id="experience">
+                    <option value="fresher">Fresher</option>
+                    <option value="1-2 years">1-2 Years</option>
+                    <option value="3-5 years">3-5 Years</option>
+                    <option value="5+ years">5+ Years</option>
+                </select>
+            </div>
+            <button class="btn" id="startBtn">🎤 Start Interview</button>
+        </div>
+
+        <!-- Step 2: Interview -->
+        <div class="step" id="step2">
+            <div class="question-box" id="questionBox">
+                <h3>❓ Question <span id="qNum">1</span>/5</h3>
+                <p id="questionText"></p>
+            </div>
+            <div class="form-group">
+                <label>Your Answer</label>
+                <textarea id="answer" placeholder="Type your answer here..."></textarea>
+            </div>
+            <button class="btn" id="nextBtn">➡️ Next Question</button>
+            <div class="loading" id="loading">⏳ Processing... Please wait!</div>
+            <div class="feedback-box" id="feedbackBox">
+                <h3>📊 Feedback</h3>
+                <pre id="feedbackText"></pre>
+            </div>
+        </div>
+
+        <div class="back-btn">
+            <a href="dashboard.html">← Back to Dashboard</a>
+        </div>
+    </div>
+
+    <script>
+        let questions = [];
+        let currentQ = 0;
+
+        document.getElementById('startBtn').addEventListener('click', async function() {
+            const role = document.getElementById('jobRole').value;
+            const exp = document.getElementById('experience').value;
+
+            if (!role) { showError('Please enter job role!'); return; }
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/mock-questions', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ role, experience: exp })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    questions = data.questions;
+                    currentQ = 0;
+                    showQuestion();
+                    document.getElementById('step1').classList.remove('active');
+                    document.getElementById('step2').classList.add('active');
+                    document.getElementById('questionBox').style.display = 'block';
+                } else {
+                    showError(data.error);
+                }
+            } catch(e) {
+                showError('Server not running!');
+            }
+        });
+
+        document.getElementById('nextBtn').addEventListener('click', async function() {
+            const answer = document.getElementById('answer').value;
+            if (!answer) { showError('Please type your answer!'); return; }
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('feedbackBox').style.display = 'none';
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/mock-feedback', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ question: questions[currentQ], answer })
+                });
+                const data = await response.json();
+                document.getElementById('loading').style.display = 'none';
+
+                if (response.ok) {
+                    document.getElementById('feedbackText').textContent = data.feedback;
+                    document.getElementById('feedbackBox').style.display = 'block';
+                    currentQ++;
+                    if (currentQ < questions.length) {
+                        setTimeout(() => {
+                            showQuestion();
+                            document.getElementById('answer').value = '';
+                            document.getElementById('feedbackBox').style.display = 'none';
+                        }, 3000);
+                    } else {
+                        document.getElementById('nextBtn').textContent = '✅ Interview Complete!';
+                        document.getElementById('nextBtn').disabled = true;
+                    }
+                } else {
+                    showError(data.error);
+                }
+            } catch(e) {
+                document.getElementById('loading').style.display = 'none';
+                showError('Server not running!');
+            }
+        });
+
+        function showQuestion() {
+            document.getElementById('qNum').textContent = currentQ + 1;
+            document.getElementById('questionText').textContent = questions[currentQ];
+        }
+
+        function showError(msg) {
+            document.getElementById('error').textContent = msg;
+            document.getElementById('error').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
