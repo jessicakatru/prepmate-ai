@@ -163,5 +163,65 @@ def dsa_feedback():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/profile', methods=['GET', 'OPTIONS'])
+def get_profile():
+    if request.method == 'OPTIONS':
+        return '', 200
+    from pymongo import MongoClient
+    import jwt
+    auth_header = request.headers.get('Authorization', '')
+    if not auth_header.startswith('Bearer '):
+        return jsonify({'error': 'Unauthorized'}), 401
+    token = auth_header.split(' ')[1]
+    try:
+        decoded = jwt.decode(token, os.getenv("JWT_SECRET"), algorithms=['HS256'])
+        email = decoded['email']
+    except Exception:
+        return jsonify({'error': 'Invalid or expired token'}), 401
+
+    mongo = MongoClient(os.getenv("MONGO_URI"))
+    db = mongo['prepmate']
+    users = db['users']
+    user = users.find_one({'email': email})
+    if not user:
+        return jsonify({'error': 'User not found'}), 404
+
+    return jsonify({
+        'name': user.get('name', ''),
+        'email': user.get('email', ''),
+        'targetRole': user.get('targetRole', ''),
+        'experience': user.get('experience', '')
+    })
+
+@app.route('/profile', methods=['PUT', 'OPTIONS'])
+def update_profile():
+    if request.method == 'OPTIONS':
+        return '', 200
+    from pymongo import MongoClient
+    import jwt
+    auth_header = request.headers.get('Authorization', '')
+    if not auth_header.startswith('Bearer '):
+        return jsonify({'error': 'Unauthorized'}), 401
+    token = auth_header.split(' ')[1]
+    try:
+        decoded = jwt.decode(token, os.getenv("JWT_SECRET"), algorithms=['HS256'])
+        email = decoded['email']
+    except Exception:
+        return jsonify({'error': 'Invalid or expired token'}), 401
+
+    data = request.json
+    name = data.get('name')
+    targetRole = data.get('targetRole')
+    experience = data.get('experience')
+
+    mongo = MongoClient(os.getenv("MONGO_URI"))
+    db = mongo['prepmate']
+    users = db['users']
+    users.update_one(
+        {'email': email},
+        {'$set': {'name': name, 'targetRole': targetRole, 'experience': experience}}
+    )
+    return jsonify({'message': 'Profile updated successfully!'})
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=int(os.environ.get('PORT', 5000)))
