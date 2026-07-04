@@ -84,6 +84,12 @@
         </div>
     </div>
     <script>
+        let currentTopic = '';
+        let currentDifficulty = '';
+
+        // Wake up backend server as soon as page loads (Render free tier sleeps when idle)
+        fetch('https://prepmate-ai-6qpv.onrender.com/').catch(() => {});
+
         document.getElementById('getProblemBtn').addEventListener('click', async function() {
             const topic = document.getElementById('topic').value;
             const difficulty = document.getElementById('difficulty').value;
@@ -101,6 +107,8 @@
                     document.getElementById('tags').innerHTML = `<span class="tag">${topic}</span><span class="tag">${difficulty}</span>`;
                     document.getElementById('problemBox').style.display = 'block';
                     document.getElementById('codeSection').style.display = 'block';
+                    currentTopic = topic;
+                    currentDifficulty = difficulty;
                 } else {
                     showError(data.error);
                 }
@@ -126,6 +134,14 @@
                 if (response.ok) {
                     document.getElementById('resultText').textContent = data.feedback;
                     document.getElementById('result').style.display = 'block';
+
+                    // Progress tracker update
+                    const count = parseInt(localStorage.getItem('dsaCount') || 0) + 1;
+                    localStorage.setItem('dsaCount', count);
+
+                    const activities = JSON.parse(localStorage.getItem('activities') || '[]');
+                    activities.push({ icon: '💻', text: 'Solved ' + currentDifficulty + ' ' + currentTopic + ' problem' });
+                    localStorage.setItem('activities', JSON.stringify(activities));
                 } else {
                     showError(data.error);
                 }
