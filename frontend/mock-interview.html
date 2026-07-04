@@ -84,6 +84,9 @@
         let questions = [];
         let currentQ = 0;
 
+        // Wake up backend server as soon as page loads (Render free tier sleeps when idle)
+        fetch('https://prepmate-ai-6qpv.onrender.com/').catch(() => {});
+
         document.getElementById('startBtn').addEventListener('click', async function() {
             const role = document.getElementById('jobRole').value;
             const exp = document.getElementById('experience').value;
@@ -141,6 +144,14 @@
                     } else {
                         document.getElementById('nextBtn').textContent = '✅ Interview Complete!';
                         document.getElementById('nextBtn').disabled = true;
+
+                        // Progress tracker update
+                        const count = parseInt(localStorage.getItem('interviewCount') || 0) + 1;
+                        localStorage.setItem('interviewCount', count);
+
+                        const activities = JSON.parse(localStorage.getItem('activities') || '[]');
+                        activities.push({ icon: '🎤', text: 'Completed mock interview for ' + document.getElementById('jobRole').value });
+                        localStorage.setItem('activities', JSON.stringify(activities));
                     }
                 } else {
                     showError(data.error);
