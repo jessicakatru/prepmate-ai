@@ -22,6 +22,7 @@
         .btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 600; cursor: pointer; margin-bottom: 10px; }
         .btn-logout { background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%); }
         .success { background: #efe; color: #4a4; padding: 10px; border-radius: 8px; margin-bottom: 15px; text-align: center; display: none; }
+        .error { background: #fee; color: #e44; padding: 10px; border-radius: 8px; margin-bottom: 15px; text-align: center; display: none; }
         .back-btn { text-align: center; margin-top: 20px; }
         .back-btn a { color: #667eea; text-decoration: none; font-weight: 600; }
         .divider { border: none; border-top: 2px solid #eee; margin: 25px 0; }
@@ -58,6 +59,7 @@
             </div>
         </div>
 
+        <div class="error" id="error"></div>
         <div class="success" id="success">Profile updated successfully!</div>
 
         <div class="form-group">
@@ -82,3 +84,111 @@
         <hr class="divider">
 
         <button class="btn btn-logout" id="logoutBtn">🚪 Logout</button>
+
+        <div class="back-btn">
+            <a href="dashboard.html">← Back to Dashboard</a>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'https://prepmate-ai-6qpv.onrender.com';
+
+        // Wake up backend server as soon as page loads (Render free tier sleeps when idle)
+        fetch(API_BASE + '/').catch(() => {});
+
+        window.onload = function() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'login.html';
+                return;
+            }
+            loadProfile();
+            loadStats();
+        };
+
+        async function loadProfile() {
+            const token = localStorage.getItem('token');
+            try {
+                const response = await fetch(API_BASE + '/profile', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    }
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    document.getElementById('profileName').textContent = data.name || localStorage.getItem('name') || 'User';
+                    document.getElementById('profileEmail').textContent = data.email || '';
+                    document.getElementById('name').value = data.name || '';
+                    document.getElementById('email').value = data.email || '';
+                    document.getElementById('targetRole').value = data.targetRole || '';
+                    document.getElementById('experience').value = data.experience || '';
+                } else {
+                    showError(data.error || 'Could not load profile');
+                }
+            } catch (e) {
+                showError('Server not running! Please try again in a few seconds.');
+            }
+        }
+
+        function loadStats() {
+            // These counts are updated by resume.html, mock-interview.html, coding.html
+            document.getElementById('resumeStat').textContent = localStorage.getItem('resumeCount') || 0;
+            document.getElementById('interviewStat').textContent = localStorage.getItem('interviewCount') || 0;
+            document.getElementById('dsaStat').textContent = localStorage.getItem('dsaCount') || 0;
+        }
+
+        document.getElementById('saveBtn').addEventListener('click', async function() {
+            const token = localStorage.getItem('token');
+            const name = document.getElementById('name').value;
+            const targetRole = document.getElementById('targetRole').value;
+            const experience = document.getElementById('experience').value;
+
+            if (!name) {
+                showError('Name cannot be empty!');
+                return;
+            }
+
+            hideMessages();
+
+            try {
+                const response = await fetch(API_BASE + '/profile', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ name, targetRole, experience })
+                });
+                const data = await response.json();
+                if (response.ok) {
+                    document.getElementById('success').style.display = 'block';
+                    document.getElementById('profileName').textContent = name;
+                    localStorage.setItem('name', name);
+                } else {
+                    showError(data.error || 'Could not save profile');
+                }
+            } catch (e) {
+                showError('Server not running! Please try again in a few seconds.');
+            }
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('name');
+            window.location.href = 'login.html';
+        });
+
+        function showError(msg) {
+            document.getElementById('error').textContent = msg;
+            document.getElementById('error').style.display = 'block';
+        }
+
+        function hideMessages() {
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('success').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
