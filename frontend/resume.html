@@ -43,6 +43,9 @@
     </div>
 
     <script>
+        // Wake up backend server as soon as page loads (Render free tier sleeps when idle)
+        fetch('https://prepmate-ai-6qpv.onrender.com/').catch(() => {});
+
         document.getElementById('resumeFile').addEventListener('change', function() {
             document.getElementById('fileName').textContent = this.files[0].name;
         });
@@ -74,6 +77,14 @@
                 if (response.ok) {
                     document.getElementById('resultText').textContent = data.result;
                     document.getElementById('result').style.display = 'block';
+
+                    // Progress tracker update
+                    const count = parseInt(localStorage.getItem('resumeCount') || 0) + 1;
+                    localStorage.setItem('resumeCount', count);
+
+                    const activities = JSON.parse(localStorage.getItem('activities') || '[]');
+                    activities.push({ icon: '📄', text: 'Analyzed resume: ' + file.name });
+                    localStorage.setItem('activities', JSON.stringify(activities));
                 } else {
                     showError(data.error);
                 }
